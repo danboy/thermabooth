@@ -1,48 +1,69 @@
-"""Runtime configuration, read from data/config.json on every call so edits apply without a restart."""
+"""Runtime configuration, read from environment variables (and the app's .env file)."""
 
-import json
+import os
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+APP_DIR = Path(__file__).resolve().parents[2]
+DATA_DIR = APP_DIR / "data"
 SESSIONS_DIR = DATA_DIR / "sessions"
-CONFIG_PATH = DATA_DIR / "config.json"
+ENV_PATH = APP_DIR / ".env"
 
-DEFAULTS = {
-    "photos_per_session": 4,
-    "countdown_seconds": 3,
-    "keep_sessions_hours": 24,
-    # Base URL phones use to reach this board, e.g. "http://192.168.1.50:7000".
-    # Leave empty to derive it from the request the touch screen made.
-    "public_base_url": "",
-    "smtp": {
-        "host": "",
-        "port": 587,
-        "username": "",
-        "password": "",
-        "from": "",
-        "starttls": True,
-    },
-    "twilio": {"account_sid": "", "auth_token": "", "from": ""},
-    "printer": {"enabled": True, "device_name": "INSTAX-", "device_address": ""},
-}
+
+def _read_dotenv(path: Path) -> dict[str, str]:
+    values = {}
+    try:
+        lines = path.read_text().splitlines()
+    except OSError:
+        return values
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip().removeprefix("export ").strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        values[key] = value
+    return values
+
+
+def _bool(value: str) -> bool:
+    return value.strip().lower() not in ("0", "false", "no", "off", "")
 
 
 def load() -> dict:
-    cfg = json.loads(json.dumps(DEFAULTS))
-    try:
-        user = json.loads(CONFIG_PATH.read_text())
-    except (OSError, ValueError):
-        user = {}
-    for key, value in user.items():
-        if isinstance(value, dict) and isinstance(cfg.get(key), dict):
-            cfg[key].update(value)
-        else:
-            cfg[key] = value
-    return cfg
+    """Read .env on every call so edits apply without a restart. Real environment variables win."""
+    env = {**_read_dotenv(ENV_PATH), **os.environ}
+    get = lambda k, d="": env.get(k, d).strip()  # noqa: E731
+    return {
+        "photos_per_session": int(get("PHOTOS_PER_SESSION", "4") or 4),
+        "countdown_seconds": int(get("COUNTDOWN_SECONDS", "3") or 3),
+        "keep_sessions_hours": float(get("KEEP_SESSIONS_HOURS", "24") or 24),
+        # Base URL phones use to reach this board, e.g. http://192.168.1.50:7000.
+        # Empty = derive it from the request the touch screen made.
+        "public_base_url": get("PUBLIC_BASE_URL"),
+        "mailgun": {
+            "api_key": get("MAILGUN_API_KEY"),
+            "domain": get("MAILGUN_DOMAIN"),
+            "from": get("MAILGUN_FROM"),
+            "region": get("MAILGUN_REGION", "us").lower(),
+        },
+        "twilio": {
+            "account_sid": get("TWILIO_ACCOUNT_SID"),
+            "auth_token": get("TWILIO_AUTH_TOKEN"),
+            "from": get("TWILIO_FROM"),
+        },
+        "printer": {
+            "enabled": _bool(get("PRINTER_ENABLED", "true")),
+            "device_name": get("PRINTER_DEVICE_NAME", "INSTAX-"),
+            "device_address": get("PRINTER_DEVICE_ADDRESS"),
+        },
+    }
 
 
 def email_enabled(cfg: dict) -> bool:
-    return bool(cfg["smtp"]["host"] and cfg["smtp"]["from"])
+    return bool(cfg["mailgun"]["api_key"] and cfg["mailgun"]["domain"])
 
 
 def sms_enabled(cfg: dict) -> bool:

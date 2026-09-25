@@ -1,13 +1,12 @@
-"""Email (SMTP) and SMS (Twilio) delivery."""
+"""Email (Mailgun) and SMS (Twilio) delivery."""
 
 import base64
 import json
 import re
-import smtplib
 import urllib.error
 import urllib.parse
 import urllib.request
-from email.message import EmailMessage
+import uuid
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -29,23 +28,43 @@ def normalize_phone(raw: str) -> str | None:
     return None
 
 
-def send_email(cfg: dict, to: str, final_jpg: bytes, singles: list[bytes], link: str) -> None:
-    s = cfg["smtp"]
-    msg = EmailMessage()
-    msg["Subject"] = "Your photobooth pictures!"
-    msg["From"] = s["from"]
-    msg["To"] = to
-    msg.set_content(f"Thanks for stopping by the photobooth! Your pictures are attached.\n\nOr grab them here: {link}\n")
-    msg.add_attachment(final_jpg, maintype="image", subtype="jpeg", filename="photobooth.jpg")
-    for i, jpg in enumerate(singles, 1):
-        msg.add_attachment(jpg, maintype="image", subtype="jpeg", filename=f"photo-{i}.jpg")
+def _multipart(fields: list[tuple[str, str]], files: list[tuple[str, str, bytes]]) -> tuple[bytes, str]:
+    boundary = "----photobooth" + uuid.uuid4().hex
+    out = bytearray()
+    for name, value in fields:
+        out += f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n{value}\r\n'.encode()
+    for field, filename, data in files:
+        out += (
+            f'--{boundary}\r\nContent-Disposition: form-data; name="{field}"; filename="{filename}"\r\n'
+            "Content-Type: image/jpeg\r\n\r\n"
+        ).encode() + data + b"\r\n"
+    out += f"--{boundary}--\r\n".encode()
+    return bytes(out), f"multipart/form-data; boundary={boundary}"
 
-    with smtplib.SMTP(s["host"], int(s["port"]), timeout=30) as smtp:
-        if s.get("starttls", True):
-            smtp.starttls()
-        if s["username"]:
-            smtp.login(s["username"], s["password"])
-        smtp.send_message(msg)
+
+def send_email(cfg: dict, to: str, final_jpg: bytes, singles: list[bytes], link: str) -> None:
+    m = cfg["mailgun"]
+    host = "api.eu.mailgun.net" if m["region"] == "eu" else "api.mailgun.net"
+    sender = m["from"] or f"Photobooth <photobooth@{m['domain']}>"
+    fields = [
+        ("from", sender),
+        ("to", to),
+        ("subject", "Your photobooth pictures!"),
+        ("text", f"Thanks for stopping by the photobooth! Your pictures are attached.\n\nOr grab them here: {link}\n"),
+    ]
+    files = [("attachment", "photobooth.jpg", final_jpg)]
+    files += [("attachment", f"photo-{i}.jpg", jpg) for i, jpg in enumerate(singles, 1)]
+    body, content_type = _multipart(fields, files)
+
+    req = urllib.request.Request(f"https://{host}/v3/{m['domain']}/messages", data=body, method="POST")
+    req.add_header("Content-Type", content_type)
+    token = base64.b64encode(f"api:{m['api_key']}".encode()).decode()
+    req.add_header("Authorization", f"Basic {token}")
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            resp.read()
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"Mailgun error {e.code}: {e.read().decode(errors='replace')[:200]}") from e
 
 
 def send_sms(cfg: dict, to: str, link: str) -> None:
