@@ -58,6 +58,9 @@ def load() -> dict:
             "enabled": _bool(get("PRINTER_ENABLED", "true")),
             "device_name": get("PRINTER_DEVICE_NAME", "INSTAX-"),
             "device_address": get("PRINTER_DEVICE_ADDRESS"),
+            # Print helper on the host (see host/). Blank helper_url = the docker host on port 8765.
+            "helper_url": get("PRINT_HELPER_URL"),
+            "helper_token": get("PRINT_HELPER_TOKEN"),
         },
     }
 

@@ -16,7 +16,19 @@ Buttons only show for features you configured. **Scan with phone** (QR code) alw
 
 ## Printing
 
-Turn the Instax Mini Link on and keep it within a couple of meters of the board. Photos print as 600x800 JPEGs over Bluetooth LE using the vendored [InstaxBLE](https://github.com/javl/InstaxBLE) (MIT, in `python/instax_ble/`). The strip layout prints two copies side by side.
+Bluetooth needs the board's system D-Bus, which app containers can't reach. So printing is done by a small helper service that runs on the board itself; the app sends it the finished photo over HTTP (port 8765).
+
+Install it once, on the board, from this app's folder:
+
+```
+sudo ./host/install.sh
+```
+
+This creates a venv in `host/.venv`, installs `simplepyble`, and enables an `instax-print` systemd service. Check it with `systemctl status instax-print` and `journalctl -u instax-print -f`.
+
+Then turn the Instax Mini Link on and keep it within a couple of meters of the board. Photos print as 600x800 JPEGs using the vendored [InstaxBLE](https://github.com/javl/InstaxBLE) (MIT, in `python/instax_ble/`). The strip layout prints two copies side by side.
+
+The helper listens on all interfaces. To restrict it, set the same `PRINT_HELPER_TOKEN` in `.env` (both the app and the helper read it).
 
 ## Privacy
 

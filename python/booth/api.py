@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse, Response
 from PIL import Image
 from pydantic import BaseModel
 
-from . import config, delivery, imaging, printer
+from . import config, delivery, imaging, print_client
 
 logger = logging.getLogger(__name__)
 
@@ -242,12 +242,13 @@ def register(web_ui, camera) -> None:
         s = _settings(d)
         _ensure_final(d)
         jpeg = imaging.to_jpeg(imaging.for_print(Image.open(d / "final.jpg"), s.layout, s.frame), 92)
-        if not printer.start_print(jpeg, cfg["printer"]):
-            raise HTTPException(409, "The printer is busy, try again in a minute")
-        return printer.status()
+        result = print_client.start_print(jpeg, cfg)
+        if result.get("state") == "error":
+            raise HTTPException(502, result.get("message", "Printing failed"))
+        return result
 
     def print_status():
-        return printer.status()
+        return print_client.status()
 
     def share_page(sid: str):
         d = _session_dir(sid)
