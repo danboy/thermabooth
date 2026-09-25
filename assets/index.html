@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Photobooth</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<img id="live" alt="">
+
+<section id="attract" class="screen">
+  <h1>📸 Photobooth</h1>
+  <p>Strike a pose &mdash; we'll take 4 photos</p>
+  <button id="start" class="big">Touch to start</button>
+</section>
+
+<section id="shoot" class="screen hidden">
+  <div id="shoot-info">Get ready!</div>
+  <div id="count"></div>
+  <div id="thumbs"></div>
+  <div id="flash"></div>
+</section>
+
+<section id="edit" class="screen hidden">
+  <div class="stage"><img id="result" alt=""><div id="busy" class="hidden">Working…</div></div>
+  <aside class="panel">
+    <h3>Filter</h3>
+    <div id="filters" class="chips"></div>
+    <h3>Layout</h3>
+    <div class="row">
+      <button data-layout="grid" class="opt">2 × 2</button>
+      <button data-layout="strip" class="opt">Strip</button>
+    </div>
+    <h3>Frame</h3>
+    <div id="frames" class="row"></div>
+    <h3>Text</h3>
+    <button id="caption-btn" class="opt wide">Add a caption</button>
+    <h3>Retake</h3>
+    <div id="retake" class="row"></div>
+    <div class="row bottom">
+      <button id="retake-all" class="ghost">Start over</button>
+      <button id="to-share" class="big small">Looks good →</button>
+    </div>
+  </aside>
+</section>
+
+<section id="share" class="screen hidden">
+  <div class="stage"><img id="final" alt=""></div>
+  <aside class="panel">
+    <h3>Get your photos</h3>
+    <button id="btn-email" class="action">✉️ Email me</button>
+    <button id="btn-sms" class="action">💬 Text me</button>
+    <button id="btn-qr" class="action">📱 Scan with phone</button>
+    <button id="btn-print" class="action">🖨️ Print Instax</button>
+    <div id="print-status"></div>
+    <div class="row bottom">
+      <button id="back-edit" class="ghost">← Edit</button>
+      <button id="done" class="big small">All done</button>
+    </div>
+  </aside>
+</section>
+
+<div id="modal" class="hidden">
+  <div class="card">
+    <h2 id="modal-title"></h2>
+    <div id="modal-input"></div>
+    <div id="keyboard"></div>
+    <div class="row">
+      <button id="modal-cancel" class="ghost">Cancel</button>
+      <button id="modal-ok" class="big small">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="qr-modal" class="hidden">
+  <div class="card"><h2>Scan to download</h2><img id="qr" alt=""><p>Your phone must be on the same Wi-Fi.</p>
+    <button id="qr-close" class="big small">Close</button></div>
+</div>
+
+<div id="toast" class="hidden"></div>
+<script src="app.js"></script>
+</body>
+</html>

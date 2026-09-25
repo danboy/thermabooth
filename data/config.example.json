@@ -1,0 +1,15 @@
+{
+  "photos_per_session": 4,
+  "countdown_seconds": 3,
+  "public_base_url": "",
+  "smtp": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "username": "you@gmail.com",
+    "password": "app-password-here",
+    "from": "Photobooth <you@gmail.com>",
+    "starttls": true
+  },
+  "twilio": { "account_sid": "", "auth_token": "", "from": "" },
+  "printer": { "enabled": true, "device_name": "INSTAX-", "device_address": "" }
+}
