@@ -1,6 +1,6 @@
 # Instax Photobooth
 
-Touch-screen photobooth for the Arduino UNO Q. Take 4 photos, pick a filter, layout, frame and caption, then email, text or print them on a Fujifilm Instax Mini Link.
+Touch-screen photobooth for the Arduino UNO Q. Take 4 photos, pick a filter, layout, frame and caption, then email, text or print them on a mini thermal printer (e.g. Huijuchen mini thermal printer).
 
 ## Setup
 
@@ -24,9 +24,9 @@ Install it once, on the board, from this app's folder:
 sudo ./host/install.sh
 ```
 
-This creates a venv in `host/.venv`, installs `simplepyble`, and enables an `instax-print` systemd service. Check it with `systemctl status instax-print` and `journalctl -u instax-print -f`.
+This creates a venv in `host/.venv`, installs `bleak`, and enables a `thermal-print` systemd service. Check it with `systemctl status thermal-print` and `journalctl -u thermal-print -f`.
 
-Then turn the Instax Mini Link on and keep it within a couple of meters of the board. Photos print as 600x800 JPEGs using the vendored [InstaxBLE](https://github.com/javl/InstaxBLE) (MIT, in `python/instax_ble/`). The strip layout prints two copies side by side.
+Then turn the printer on and keep it within a couple of meters of the board. The final photo is resized to 384 dots wide (58mm paper at 203dpi), Floyd-Steinberg dithered to black/white, and sent using the vendored `python/catprinter_ble/` (adapted from [rbaron/catprinter](https://github.com/rbaron/catprinter), MIT) — the reverse-engineered "cat printer" BLE protocol shared by cheap thermal printers like the Huijuchen mini thermal printer (also sold as GB01/GB02/GB03, GT01, X5/X6/X7, and other rebrands). Leave `PRINTER_DEVICE_NAME` blank to autodiscover by BLE service UUID, or set it if you know the printer's advertised name. `PRINTER_ENERGY` controls darkness (`0x0000`-`0xffff`, default darkest).
 
 The helper listens on all interfaces. To restrict it, set the same `PRINT_HELPER_TOKEN` in `.env` (both the app and the helper read it).
 

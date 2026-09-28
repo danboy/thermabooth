@@ -56,7 +56,7 @@ def _request(cfg: dict, method: str, path: str, body: bytes | None = None, heade
         logger.warning("print helper unreachable: %s", e)
         return {
             "state": "error",
-            "message": "Can't reach the print helper on the board. Is the instax-print service running? (see README)",
+            "message": "Can't reach the print helper on the board. Is the thermal-print service running? (see README)",
         }
 
 
@@ -67,7 +67,12 @@ def start_print(jpeg: bytes, cfg: dict) -> dict:
         "POST",
         "/print",
         jpeg,
-        {"Content-Type": "image/jpeg", "X-Device-Name": p["device_name"], "X-Device-Address": p["device_address"]},
+        {
+            "Content-Type": "image/jpeg",
+            "X-Device-Name": p["device_name"],
+            "X-Device-Address": p["device_address"],
+            "X-Device-Energy": str(p["energy"]),
+        },
     )
 
 

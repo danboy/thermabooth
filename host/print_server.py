@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Instax print helper. Runs on the board's host OS (not in the app container) so it can reach
+"""Thermal print helper. Runs on the board's host OS (not in the app container) so it can reach
 BlueZ over the system D-Bus. The photobooth app POSTs finished JPEGs to it.
 
-    POST /print   body: image/jpeg   headers: X-Device-Name, X-Device-Address (optional)
+    POST /print   body: image/jpeg   headers: X-Device-Name, X-Device-Address, X-Device-Energy (all optional)
     GET  /status
 """
 
@@ -57,6 +57,7 @@ class Handler(BaseHTTPRequestHandler):
         cfg = {
             "device_name": self.headers.get("X-Device-Name", ""),
             "device_address": self.headers.get("X-Device-Address", ""),
+            "energy": self.headers.get("X-Device-Energy", ""),
         }
         if not printer.start_print(jpeg, cfg):
             return self._send(409, {"state": "error", "message": "The printer is busy, try again in a minute"})
@@ -71,7 +72,7 @@ def main() -> None:
     ap.add_argument("--bind", default="0.0.0.0")
     ap.add_argument("--port", type=int, default=8765)
     args = ap.parse_args()
-    print(f"Instax print helper listening on {args.bind}:{args.port}", flush=True)
+    print(f"Thermal print helper listening on {args.bind}:{args.port}", flush=True)
     ThreadingHTTPServer((args.bind, args.port), Handler).serve_forever()
 
 

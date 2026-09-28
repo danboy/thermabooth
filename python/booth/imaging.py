@@ -17,8 +17,8 @@ FRAMES = {
     "sky": ((208, 230, 250), (20, 60, 110)),
 }
 
-# Instax Mini Link wants 600x800 JPEG.
-PRINT_SIZE = (600, 800)
+# Thermal printer paper: 58mm at 203dpi = 384 dots wide. Height is whatever the roll needs.
+PRINT_WIDTH = 384
 
 _FONT_CANDIDATES = [
     "DejaVuSans-Bold.ttf",
@@ -132,19 +132,11 @@ def compose(photos: list[Image.Image], filter_name: str, layout: str, frame: str
     return canvas
 
 
-def for_print(final: Image.Image, layout: str, frame: str) -> Image.Image:
-    """Fit the composed image onto a 600x800 Instax Mini frame."""
-    bg, _ = FRAMES.get(frame, FRAMES["white"])
-    pw, ph = PRINT_SIZE
-    if layout == "strip":
-        # Classic photobooth: two copies of the strip side by side.
-        strip = ImageOps.contain(final, (pw // 2 - 20, ph - 20), Image.LANCZOS)
-        canvas = Image.new("RGB", PRINT_SIZE, bg)
-        y = (ph - strip.height) // 2
-        canvas.paste(strip, (pw // 4 - strip.width // 2 + 5, y))
-        canvas.paste(strip, (3 * pw // 4 - strip.width // 2 - 5, y))
-        return canvas
-    return final.resize(PRINT_SIZE, Image.LANCZOS)
+def for_print(final: Image.Image) -> Image.Image:
+    """Scale the composed image to the printer's paper width, roll length grows to fit."""
+    w, h = final.size
+    new_h = max(1, round(h * PRINT_WIDTH / w))
+    return final.resize((PRINT_WIDTH, new_h), Image.LANCZOS)
 
 
 def to_jpeg(img: Image.Image, quality: int = 90) -> bytes:

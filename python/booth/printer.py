@@ -1,9 +1,9 @@
-"""Fujifilm Instax Mini Link printing over Bluetooth LE (via the vendored InstaxBLE)."""
+"""Thermal printing over Bluetooth LE, for the Huijuchen mini thermal printer and other
+"cat printer" protocol clones (GB01/GB02/GB03, GT01, X5/X6/X7, ...)."""
 
 import io
 import logging
 import threading
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -29,48 +29,39 @@ def start_print(jpeg: bytes, printer_cfg: dict) -> bool:
     return True
 
 
+def _bitmap_rows(jpeg: bytes, width: int):
+    from PIL import Image
+
+    img = Image.open(io.BytesIO(jpeg)).convert("L")
+    w, h = img.size
+    new_h = max(1, round(h * width / w))
+    img = img.resize((width, new_h), Image.LANCZOS)
+    bw = img.convert("1", dither=Image.FLOYDSTEINBERG)
+    data = list(bw.getdata())
+    for y in range(new_h):
+        row = data[y * width : (y + 1) * width]
+        yield [px == 0 for px in row]  # mode "1": 0 = black
+
+
 def _run(jpeg: bytes, cfg: dict) -> None:
-    instax = None
     try:
         try:
-            from instax_ble.InstaxBLE import InstaxBLE
+            from catprinter_ble import cmds
+            from catprinter_ble.ble import print_sync
         except ImportError as e:
-            raise RuntimeError(f"Bluetooth printing library missing ({e}). Is simplepyble installed?") from e
+            raise RuntimeError(f"Printing library missing ({e}). Re-run host/install.sh to install bleak and pillow.") from e
 
-        try:
-            instax = InstaxBLE(
-                device_name=cfg.get("device_name") or None,
-                device_address=cfg.get("device_address") or None,
-                print_enabled=True,
-                quiet=True,
-            )
-        except SystemExit:  # InstaxBLE exits when no adapter exists
-            raise RuntimeError("No Bluetooth adapter found on the board.")
+        _set("printing", "Rendering photo for the printer...")
+        rows = list(_bitmap_rows(jpeg, cmds.PRINT_WIDTH))
+        energy = int(cfg.get("energy") or 0xFFFF)
+        data = cmds.cmds_print_img(rows, energy=energy)
 
-        instax.connect(timeout=25)
-        if not instax.peripheral or not instax.peripheral.is_connected():
-            raise RuntimeError("Printer not found. Turn it on and keep it close.")
-        if instax.photosLeft == 0:
-            raise RuntimeError("Printer is out of film.")
+        _set("connecting", "Looking for the printer...")
+        print_sync(data, cfg.get("device_name"), cfg.get("device_address"))
 
-        _set("printing", "Sending photo to the printer...")
-        instax.print_image(io.BytesIO(jpeg))
-
-        deadline = time.time() + 120
-        while instax.packetsForPrinting and time.time() < deadline:
-            time.sleep(0.5)
-        if instax.packetsForPrinting:
-            raise RuntimeError("Timed out sending the photo to the printer.")
-        _set("printing", "Printing... your photo is on its way out!")
-        time.sleep(20)  # keep the link up while the printer works
         _set("done", "Done! Grab your print.")
     except Exception as e:
         logger.exception("Print failed")
         _set("error", str(e))
     finally:
-        try:
-            if instax is not None:
-                instax.disconnect()
-        except Exception:
-            pass
         _lock.release()

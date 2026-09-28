@@ -12,7 +12,7 @@ from pathlib import Path
 
 import segno
 from fastapi import HTTPException, Request
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, Response, StreamingResponse
 from PIL import Image
 from pydantic import BaseModel
 
@@ -109,16 +109,15 @@ def _prune(hours: float) -> None:
             pass
 
 
-def _ensure_started(camera) -> None:
-    started = camera.is_started
-    if callable(started):  # a method in some brick versions, a property in others
-        started = started()
-    if not started:
-        camera.start()
-
-
-def register(web_ui, camera) -> None:
+def register(web_ui, grabber) -> None:
     api = web_ui.expose_api
+
+    def stream():
+        return StreamingResponse(
+            grabber.mjpeg(),
+            media_type="multipart/x-mixed-replace; boundary=frame",
+            headers={"Cache-Control": "no-store"},
+        )
 
     def status():
         cfg = config.load()
@@ -145,17 +144,7 @@ def register(web_ui, camera) -> None:
         n = int(config.load()["photos_per_session"])
         if not 0 <= body.slot < n:
             raise HTTPException(400, "bad slot")
-        try:
-            _ensure_started(camera)
-        except Exception as e:
-            logger.exception("camera start failed")
-            raise HTTPException(503, f"camera unavailable: {e}")
-        frame = None
-        for _ in range(20):
-            frame = camera.capture()
-            if frame is not None:
-                break
-            time.sleep(0.1)
+        frame = grabber.next_frame()
         if frame is None:
             raise HTTPException(503, "camera not ready")
         img = Image.fromarray(frame[..., ::-1] if frame.ndim == 3 else frame).convert("RGB")  # OpenCV BGR -> RGB
@@ -239,9 +228,8 @@ def register(web_ui, camera) -> None:
         d = _session_dir(sid)
         if not cfg["printer"]["enabled"]:
             raise HTTPException(501, "Printing is disabled")
-        s = _settings(d)
         _ensure_final(d)
-        jpeg = imaging.to_jpeg(imaging.for_print(Image.open(d / "final.jpg"), s.layout, s.frame), 92)
+        jpeg = imaging.to_jpeg(imaging.for_print(Image.open(d / "final.jpg")), 92)
         result = print_client.start_print(jpeg, cfg)
         if result.get("state") == "error":
             raise HTTPException(502, result.get("message", "Printing failed"))
@@ -264,6 +252,7 @@ def register(web_ui, camera) -> None:
 </body>"""
         return HTMLResponse(html)
 
+    api("GET", "/stream", stream)
     api("GET", "/api/status", status)
     api("POST", "/api/session", new_session)
     api("POST", "/api/session/{sid}/capture", capture)
