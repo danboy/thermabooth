@@ -25,19 +25,21 @@
 <section id="edit" class="screen hidden">
   <div class="stage"><img id="result" alt=""><div id="busy" class="hidden">Working…</div></div>
   <aside class="panel">
-    <h3>Filter</h3>
-    <div id="filters" class="chips"></div>
-    <h3>Layout</h3>
-    <div class="row">
-      <button data-layout="grid" class="opt">2 × 2</button>
-      <button data-layout="strip" class="opt">Strip</button>
+    <div class="panel-scroll">
+      <h3>Filter</h3>
+      <div id="filters" class="chips"></div>
+      <h3>Layout</h3>
+      <div class="row">
+        <button data-layout="grid" class="opt">2 × 2</button>
+        <button data-layout="strip" class="opt">Strip</button>
+      </div>
+      <h3>Frame</h3>
+      <div id="frames" class="row"></div>
+      <h3>Text</h3>
+      <button id="caption-btn" class="opt wide">Add a caption</button>
+      <h3>Retake</h3>
+      <div id="retake" class="row"></div>
     </div>
-    <h3>Frame</h3>
-    <div id="frames" class="row"></div>
-    <h3>Text</h3>
-    <button id="caption-btn" class="opt wide">Add a caption</button>
-    <h3>Retake</h3>
-    <div id="retake" class="row"></div>
     <div class="row bottom">
       <button id="retake-all" class="ghost">Start over</button>
       <button id="to-share" class="big small">Looks good →</button>
@@ -48,12 +50,14 @@
 <section id="share" class="screen hidden">
   <div class="stage"><img id="final" alt=""></div>
   <aside class="panel">
-    <h3>Get your photos</h3>
-    <button id="btn-email" class="action">✉️ Email me</button>
-    <button id="btn-sms" class="action">💬 Text me</button>
-    <button id="btn-qr" class="action">📱 Scan with phone</button>
-    <button id="btn-print" class="action">🖨️ Print</button>
-    <div id="print-status"></div>
+    <div class="panel-scroll">
+      <h3>Get your photos</h3>
+      <button id="btn-email" class="action">✉️ Email me</button>
+      <button id="btn-sms" class="action">💬 Text me</button>
+      <button id="btn-qr" class="action">📱 Scan with phone</button>
+      <button id="btn-print" class="action">🖨️ Print</button>
+      <div id="print-status"></div>
+    </div>
     <div class="row bottom">
       <button id="back-edit" class="ghost">← Edit</button>
       <button id="done" class="big small">All done</button>

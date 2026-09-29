@@ -2,7 +2,7 @@
 """Thermal print helper. Runs on the board's host OS (not in the app container) so it can reach
 BlueZ over the system D-Bus. The photobooth app POSTs finished JPEGs to it.
 
-    POST /print   body: image/jpeg   headers: X-Device-Name, X-Device-Address, X-Device-Energy (all optional)
+    POST /print   body: image/jpeg   headers: X-Device-Name, X-Device-Address, X-Device-Intensity (all optional)
     GET  /status
 """
 
@@ -57,7 +57,7 @@ class Handler(BaseHTTPRequestHandler):
         cfg = {
             "device_name": self.headers.get("X-Device-Name", ""),
             "device_address": self.headers.get("X-Device-Address", ""),
-            "energy": self.headers.get("X-Device-Energy", ""),
+            "intensity": self.headers.get("X-Device-Intensity", ""),
         }
         if not printer.start_print(jpeg, cfg):
             return self._send(409, {"state": "error", "message": "The printer is busy, try again in a minute"})

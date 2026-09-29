@@ -59,8 +59,8 @@ def load() -> dict:
             # Blank device_name = autodiscover by BLE service UUID (works for most cat-printer clones).
             "device_name": get("PRINTER_DEVICE_NAME"),
             "device_address": get("PRINTER_DEVICE_ADDRESS"),
-            # Darkness: 0x0000 (light) to 0xffff (darkest, default).
-            "energy": int(get("PRINTER_ENERGY", "0xffff") or "0xffff", 16),
+            # Darkness: 0x00 (light) to 0xff (darkest). 0x5d is the printer's own default.
+            "intensity": int(get("PRINTER_INTENSITY", "0x5d") or "0x5d", 16),
             # Print helper on the host (see host/). Blank helper_url = the docker host on port 8765.
             "helper_url": get("PRINT_HELPER_URL"),
             "helper_token": get("PRINT_HELPER_TOKEN"),

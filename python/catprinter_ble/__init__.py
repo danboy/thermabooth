@@ -1,7 +1,7 @@
-"""Vendored, trimmed protocol implementation for the cheap BLE "cat printer" family
-(GB01/GB02/GB03, GT01, X5/X6/X7, and rebrands like the Huijuchen mini thermal printer -
-they all speak the same reverse-engineered "51 78" protocol).
+"""Vendored, trimmed protocol implementation for the MXW01 cat-printer BLE protocol,
+used by the Huijuchen mini thermal printer and other MXW01-based rebrands.
 
-Adapted from rbaron/catprinter (MIT): https://github.com/rbaron/catprinter
+Adapted from jeremy46231/MXW01-catprinter (MIT), itself a fork of rbaron/catprinter.
+https://github.com/jeremy46231/MXW01-catprinter - see PROTOCOL.md there for the spec.
 See LICENSE in this directory.
 """

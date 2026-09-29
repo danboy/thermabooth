@@ -26,7 +26,9 @@ sudo ./host/install.sh
 
 This creates a venv in `host/.venv`, installs `bleak`, and enables a `thermal-print` systemd service. Check it with `systemctl status thermal-print` and `journalctl -u thermal-print -f`.
 
-Then turn the printer on and keep it within a couple of meters of the board. The final photo is resized to 384 dots wide (58mm paper at 203dpi), Floyd-Steinberg dithered to black/white, and sent using the vendored `python/catprinter_ble/` (adapted from [rbaron/catprinter](https://github.com/rbaron/catprinter), MIT) — the reverse-engineered "cat printer" BLE protocol shared by cheap thermal printers like the Huijuchen mini thermal printer (also sold as GB01/GB02/GB03, GT01, X5/X6/X7, and other rebrands). Leave `PRINTER_DEVICE_NAME` blank to autodiscover by BLE service UUID, or set it if you know the printer's advertised name. `PRINTER_ENERGY` controls darkness (`0x0000`-`0xffff`, default darkest).
+Then turn the printer on and keep it within a couple of meters of the board. The final photo is resized to 384 dots wide (58mm paper at 203dpi), Floyd-Steinberg dithered to black/white, and sent using the vendored `python/catprinter_ble/` (adapted from [jeremy46231/MXW01-catprinter](https://github.com/jeremy46231/MXW01-catprinter), MIT, itself a fork of rbaron/catprinter) — the reverse-engineered MXW01 BLE protocol used by the Huijuchen mini thermal printer and other MXW01-based rebrands. This is a different, newer protocol than the older GB01/GT01-style "cat printers"; it won't talk to those.
+
+If the printer won't connect, set `PRINTER_DEVICE_NAME=MXW01` (its advertised BLE name) instead of leaving it blank — autodiscover relies on the service UUID showing up in the BLE advertisement, which not every printer includes. `PRINTER_INTENSITY` controls darkness (`0x00`-`0xff`, `0x5d` is the printer's own default).
 
 The helper listens on all interfaces. To restrict it, set the same `PRINT_HELPER_TOKEN` in `.env` (both the app and the helper read it).
 

@@ -1,5 +1,5 @@
 """Thermal printing over Bluetooth LE, for the Huijuchen mini thermal printer and other
-"cat printer" protocol clones (GB01/GB02/GB03, GT01, X5/X6/X7, ...)."""
+MXW01-protocol "cat printer" clones."""
 
 import io
 import logging
@@ -53,11 +53,11 @@ def _run(jpeg: bytes, cfg: dict) -> None:
 
         _set("printing", "Rendering photo for the printer...")
         rows = list(_bitmap_rows(jpeg, cmds.PRINT_WIDTH))
-        energy = int(cfg.get("energy") or 0xFFFF)
-        data = cmds.cmds_print_img(rows, energy=energy)
+        intensity = int(cfg.get("intensity") or 0x5D)
+        data = cmds.prepare_image_data(rows)
 
         _set("connecting", "Looking for the printer...")
-        print_sync(data, cfg.get("device_name"), cfg.get("device_address"))
+        print_sync(data, cfg.get("device_name"), cfg.get("device_address"), intensity)
 
         _set("done", "Done! Grab your print.")
     except Exception as e:

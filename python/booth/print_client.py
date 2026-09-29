@@ -71,7 +71,7 @@ def start_print(jpeg: bytes, cfg: dict) -> dict:
             "Content-Type": "image/jpeg",
             "X-Device-Name": p["device_name"],
             "X-Device-Address": p["device_address"],
-            "X-Device-Energy": str(p["energy"]),
+            "X-Device-Intensity": str(p["intensity"]),
         },
     )
 
