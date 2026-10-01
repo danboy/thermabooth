@@ -1,7 +1,7 @@
 """Talks to the host-side print helper (host/print_server.py).
 
-Bluetooth needs the host's system D-Bus, which app containers can't reach, so the actual
-printing happens in a small service on the board itself.
+The app container has no SDK peripheral for a generic USB device (only camera/mic/speaker/
+remote_sensor), so the actual printing happens in a small service on the board itself.
 """
 
 import json
@@ -69,9 +69,7 @@ def start_print(jpeg: bytes, cfg: dict) -> dict:
         jpeg,
         {
             "Content-Type": "image/jpeg",
-            "X-Device-Name": p["device_name"],
-            "X-Device-Address": p["device_address"],
-            "X-Device-Intensity": str(p["intensity"]),
+            "X-Device-Path": p["device_path"],
         },
     )
 

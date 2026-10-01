@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Thermal print helper. Runs on the board's host OS (not in the app container) so it can reach
-BlueZ over the system D-Bus. The photobooth app POSTs finished JPEGs to it.
+"""Thermal print helper. Runs on the board's host OS (not in the app container), which has no
+SDK peripheral for a generic USB device. The photobooth app POSTs finished JPEGs to it.
 
-    POST /print   body: image/jpeg   headers: X-Device-Name, X-Device-Address, X-Device-Intensity (all optional)
+    POST /print   body: image/jpeg   headers: X-Device-Path (optional)
     GET  /status
 """
 
@@ -55,9 +55,7 @@ class Handler(BaseHTTPRequestHandler):
         if not jpeg.startswith(b"\xff\xd8"):
             return self._send(400, {"state": "error", "message": "Not a JPEG"})
         cfg = {
-            "device_name": self.headers.get("X-Device-Name", ""),
-            "device_address": self.headers.get("X-Device-Address", ""),
-            "intensity": self.headers.get("X-Device-Intensity", ""),
+            "device_path": self.headers.get("X-Device-Path", ""),
         }
         if not printer.start_print(jpeg, cfg):
             return self._send(409, {"state": "error", "message": "The printer is busy, try again in a minute"})

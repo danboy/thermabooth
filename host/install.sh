@@ -6,15 +6,18 @@ set -euo pipefail
 HOST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_USER="${SUDO_USER:-$(id -un)}"
 
-apt-get install -y python3-venv bluez >/dev/null
+apt-get install -y python3-venv >/dev/null
 sudo -u "$APP_USER" python3 -m venv "$HOST_DIR/.venv"
-sudo -u "$APP_USER" "$HOST_DIR/.venv/bin/pip" install --quiet bleak pillow
+sudo -u "$APP_USER" "$HOST_DIR/.venv/bin/pip" install --quiet python-escpos pillow
+
+# The printer's device node (/dev/usb/lp0) is normally group "lp" - join it so the service
+# user can write to the printer without running as root.
+usermod -aG lp "$APP_USER"
 
 cat > /etc/systemd/system/thermal-print.service <<UNIT
 [Unit]
 Description=Thermal photobooth print helper
-After=bluetooth.target network.target
-Wants=bluetooth.target
+After=network.target
 
 [Service]
 User=$APP_USER
