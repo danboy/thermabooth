@@ -2,7 +2,7 @@
 """Thermal print helper. Runs on the board's host OS (not in the app container), which has no
 SDK peripheral for a generic USB device. The photobooth app POSTs finished JPEGs to it.
 
-    POST /print   body: image/jpeg   headers: X-Device-Path (optional)
+    POST /print   body: image/jpeg   headers: X-Device-Vendor-Id, X-Device-Product-Id (optional)
     GET  /status
 """
 
@@ -55,7 +55,8 @@ class Handler(BaseHTTPRequestHandler):
         if not jpeg.startswith(b"\xff\xd8"):
             return self._send(400, {"state": "error", "message": "Not a JPEG"})
         cfg = {
-            "device_path": self.headers.get("X-Device-Path", ""),
+            "vendor_id": self.headers.get("X-Device-Vendor-Id", ""),
+            "product_id": self.headers.get("X-Device-Product-Id", ""),
         }
         if not printer.start_print(jpeg, cfg):
             return self._send(409, {"state": "error", "message": "The printer is busy, try again in a minute"})

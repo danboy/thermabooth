@@ -69,7 +69,8 @@ def start_print(jpeg: bytes, cfg: dict) -> dict:
         jpeg,
         {
             "Content-Type": "image/jpeg",
-            "X-Device-Path": p["device_path"],
+            "X-Device-Vendor-Id": str(p["vendor_id"]),
+            "X-Device-Product-Id": str(p["product_id"]),
         },
     )
 

@@ -1,5 +1,7 @@
 """Thermal printing over USB (ESC/POS), for the Sunydog mini thermal receipt printer and
-other generic 58mm USB receipt printers that show up as a /dev/usb/lp* device."""
+other generic 58mm USB receipt printers built on the same vendor-specific USB chipset
+(reports as a raw USB device, not the USB Printer Class - no /dev/usb/lp* node, so this
+talks to it directly over libusb instead of a device file)."""
 
 import io
 import logging
@@ -11,6 +13,10 @@ _lock = threading.Lock()
 _status = {"state": "idle", "message": ""}
 
 PRINT_WIDTH = 384  # 58mm paper at 203dpi
+
+# USB vendor/product ID for the Sunydog printer (and other "CLA58"-chipset rebrands).
+DEFAULT_VENDOR_ID = 0x6868
+DEFAULT_PRODUCT_ID = 0x0200
 
 
 def status() -> dict:
@@ -44,21 +50,23 @@ def _dithered_image(jpeg: bytes, width: int):
 def _run(jpeg: bytes, cfg: dict) -> None:
     try:
         try:
-            from escpos.printer import File
+            from escpos.printer import Usb
+            from usb.core import USBError
         except ImportError as e:
-            raise RuntimeError(f"Printing library missing ({e}). Re-run host/install.sh to install python-escpos and pillow.") from e
+            raise RuntimeError(f"Printing library missing ({e}). Re-run host/install.sh to install python-escpos and pyusb.") from e
 
         img = _dithered_image(jpeg, PRINT_WIDTH)
 
-        device_path = cfg.get("device_path") or "/dev/usb/lp0"
+        vendor_id = int(cfg.get("vendor_id") or DEFAULT_VENDOR_ID)
+        product_id = int(cfg.get("product_id") or DEFAULT_PRODUCT_ID)
         _set("printing", "Sending photo to the printer...")
         try:
-            p = File(devfile=device_path)
+            p = Usb(vendor_id, product_id)
             p.image(img)
             p.cut()
             p.close()
-        except OSError as e:
-            raise RuntimeError(f"Can't reach the printer at {device_path}. Is it plugged in and turned on?") from e
+        except USBError as e:
+            raise RuntimeError(f"Can't reach the printer (USB {vendor_id:#06x}:{product_id:#06x}). Is it plugged in and turned on?") from e
 
         _set("done", "Done! Grab your print.")
     except Exception as e:

@@ -24,11 +24,11 @@ Install it once, on the board, from this app's folder:
 sudo ./host/install.sh
 ```
 
-This creates a venv in `host/.venv`, installs `python-escpos`, adds the service user to the `lp` group (so it can write to the printer's device node without root), and enables a `thermal-print` systemd service. Check it with `systemctl status thermal-print` and `journalctl -u thermal-print -f`.
+This creates a venv in `host/.venv`, installs `python-escpos` + `pyusb`, adds a udev rule granting non-root USB access to the printer, and enables a `thermal-print` systemd service. Check it with `systemctl status thermal-print` and `journalctl -u thermal-print -f`.
 
-Plug the printer into the board over USB and turn it on; it should show up as `/dev/usb/lp0`. The final photo is resized to 384 dots wide (58mm paper at 203dpi), Floyd-Steinberg dithered to black/white, and sent as standard ESC/POS commands via [python-escpos](https://github.com/python-escpos/python-escpos) — this works with the Sunydog mini thermal receipt printer and most other generic 58mm USB receipt printers.
+Plug the printer into the board over USB and turn it on. The Sunydog printer (and other "CLA58"-chipset rebrands) enumerates as a vendor-specific USB device rather than the USB Printer Class, so it won't show up as `/dev/usb/lp0` — the helper talks to it directly over libusb instead, using its USB vendor/product ID (`6868:0200` by default). The final photo is resized to 384 dots wide (58mm paper at 203dpi), Floyd-Steinberg dithered to black/white, and sent as standard ESC/POS commands via [python-escpos](https://github.com/python-escpos/python-escpos).
 
-If the printer enumerates at a different path, set `PRINTER_DEVICE_PATH` in `.env` (check with `ls /dev/usb/`).
+If you have a different printer, find its IDs with `lsusb` and set `PRINTER_USB_VENDOR_ID` / `PRINTER_USB_PRODUCT_ID` in `.env` (and re-run `host/install.sh` so the udev rule covers it too).
 
 The helper listens on all interfaces. To restrict it, set the same `PRINT_HELPER_TOKEN` in `.env` (both the app and the helper read it).
 

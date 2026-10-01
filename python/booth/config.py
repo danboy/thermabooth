@@ -56,8 +56,10 @@ def load() -> dict:
         },
         "printer": {
             "enabled": _bool(get("PRINTER_ENABLED", "true")),
-            # USB receipt printer's device node, as seen by the host (not the app container).
-            "device_path": get("PRINTER_DEVICE_PATH", "/dev/usb/lp0"),
+            # USB vendor/product ID, as seen by `lsusb` on the host. Defaults match the Sunydog
+            # printer (and other "CLA58"-chipset rebrands); override for a different printer.
+            "vendor_id": int(get("PRINTER_USB_VENDOR_ID", "0x6868") or "0x6868", 16),
+            "product_id": int(get("PRINTER_USB_PRODUCT_ID", "0x0200") or "0x0200", 16),
             # Print helper on the host (see host/). Blank helper_url = the docker host on port 8765.
             "helper_url": get("PRINT_HELPER_URL"),
             "helper_token": get("PRINT_HELPER_TOKEN"),
